@@ -11,8 +11,8 @@ using nav_msgs::msg::Odometry;
 struct WheelVelocity
 {
   double dt = 0;
-  double wl;
-  double wr;
+  double wl = 0;
+  double wr = 0;
 };
 
 struct Wheel
@@ -46,10 +46,10 @@ public:
   {
     wheel.rad = declare_parameter("wheels.radius", 0.033);
     wheel.separation = declare_parameter("wheels.separation", 0.287);
-    wheel.vmax = declare_parameter("wheels.max_vel", 0.);
+    wheel.vmax = declare_parameter("wheels.max_vel", 0.26);
 
-    odom.header.frame_id = tf.header.frame_id = declare_parameter<std::string>("odom.frame_id", "odom");
-    odom.child_frame_id = tf.child_frame_id = declare_parameter<std::string>("odom.child_frame_id", "base_footprint");
+    odom.header.frame_id = tf.header.frame_id = declare_parameter<std::string>("odom.frame_id", "waffle1/odom");
+    odom.child_frame_id = tf.child_frame_id = declare_parameter<std::string>("odom.child_frame_id", "waffle1/base_footprint");
 
     const auto publish_tf{declare_parameter("publish_tf", true)};
     if(publish_tf)
@@ -88,9 +88,6 @@ public:
   }
 
 private:
-
-  double vmax{declare_parameter("max_vel", 0.26)};
-
 
   std::optional<tf2_ros::TransformBroadcaster> br;
 
@@ -153,14 +150,14 @@ private:
     const size_t right_idx = 1-left_idx;
 
     const rclcpp::Time t{js->header.stamp};
-    const auto duration{t-t_prev};
+    const auto dt{(t-t_prev).seconds()};
     WheelVelocity result;
 
-    if(duration.seconds() > 0.)
+    if(dt > 0.)
     {
-      const auto dt{duration.seconds()};
       const auto dl{js->position[left_idx]-prev[0]};
       const auto dr{js->position[right_idx]-prev[1]};
+      result = {dt, dl/dt, dr/dt};
     }
 
     prev = {js->position[left_idx], js->position[right_idx]};
