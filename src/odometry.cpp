@@ -23,13 +23,11 @@ struct Wheel
 
   inline void scale(double &v, double &w)
   {
-    if(vmax == 0.)
-       return;
-
      const auto vl{std::abs(v + separation*w/2)};
      const auto vr{std::abs(v - separation*w/2)};
 
      const auto scale{std::max(vl, vr)/vmax};
+
      if(scale > 1)
      {
        v /= scale;
@@ -80,7 +78,8 @@ public:
       static auto cmd_pub = create_publisher<Twist>("cmd_vel_scaled", 1);
       static auto cmd_sub = create_subscription<Twist>("cmd_vel", 1, [&](Twist::ConstSharedPtr msg)
       {
-        static Twist cmd = *msg;
+        static Twist cmd;
+        cmd = *msg;
         wheel.scale(cmd.linear.x, cmd.angular.z);
         cmd_pub->publish(cmd);
       });
@@ -174,7 +173,9 @@ private:
 int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
+
   auto robot{std::make_shared<TurtleOdometry>()};
 
   rclcpp::spin(robot);
+
 }
